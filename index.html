@@ -447,9 +447,152 @@
         margin-bottom: 0;
       }
     }
+
+    /* ===== Redirect Screen ===== */
+    .redirect-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 24px;
+      text-align: center;
+      background: radial-gradient(circle at 50% 38%, rgba(225, 6, 0, 0.18), transparent 62%), var(--bg);
+    }
+
+    .redirect-logo {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(245, 197, 24, 0.5);
+      box-shadow: 0 0 32px rgba(225, 6, 0, 0.45);
+    }
+
+    .redirect-spinner {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--red-glow);
+      border-right-color: var(--gold);
+      animation: redirect-spin 0.9s linear infinite;
+    }
+
+    @keyframes redirect-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .redirect-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.05rem, 4.5vw, 1.45rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .redirect-sub {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      max-width: 320px;
+    }
+
+    .redirect-count {
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .redirect-track {
+      width: min(280px, 78vw);
+      height: 4px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .redirect-fill {
+      width: 0;
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      transition: width 0.1s linear;
+    }
+
+    .redirect-manual {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .redirect-manual:hover {
+      color: var(--text);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .redirect-spinner { animation: none; }
+    }
   </style>
 </head>
 <body>
+  <div class="redirect-overlay" id="redirectOverlay" role="status" aria-live="polite">
+    <img class="redirect-logo" src="https://i.ibb.co/1f4NJTF1/Whats-App-Image-2026-08-14-at-13-29-09.jpg" alt="Jet Phile" width="96" height="96" />
+    <div class="redirect-spinner" aria-hidden="true"></div>
+    <div class="redirect-title">Redirecting&hellip;</div>
+    <p class="redirect-sub">
+      Taking you to the official Jet Phile Telegram channel in
+      <span class="redirect-count" id="redirectCount">3</span>s
+    </p>
+    <div class="redirect-track" aria-hidden="true"><div class="redirect-fill" id="redirectFill"></div></div>
+    <a class="redirect-manual" id="redirectManual" href="https://telegram.me/+fseYFEUHKyM1NDQ0" rel="noopener">Tap here if you are not redirected</a>
+  </div>
+
+  <script>
+    (function () {
+      // ===== 3 second auto-redirect to Telegram =====
+      var TELEGRAM_URL = 'https://telegram.me/+fseYFEUHKyM1NDQ0';
+      var DELAY_MS = 3000;
+
+      var countEl = document.getElementById('redirectCount');
+      var fillEl = document.getElementById('redirectFill');
+      var manual = document.getElementById('redirectManual');
+
+      var start = Date.now();
+      var done = false;
+      var tick;
+
+      function stop() {
+        done = true;
+        clearInterval(tick);
+      }
+
+      function go() {
+        if (done) return;
+        stop();
+        // replace() so the back button does not drop visitors onto this screen again
+        window.location.replace(TELEGRAM_URL);
+      }
+
+      // Fire the pixel up front so it has the full 3s to send before we leave.
+      if (typeof fbq === 'function') {
+        fbq('track', 'Lead');
+        fbq('trackCustom', 'JoinTelegram');
+      }
+
+      tick = setInterval(function () {
+        var elapsed = Date.now() - start;
+        var pct = Math.min(elapsed / DELAY_MS, 1);
+        fillEl.style.width = (pct * 100) + '%';
+        countEl.textContent = Math.max(Math.ceil((DELAY_MS - elapsed) / 1000), 0);
+        if (pct >= 1) go();
+      }, 100);
+
+      manual.addEventListener('click', stop);
+    })();
+  </script>
   <div class="bg-layer"></div>
   <div class="grid-overlay"></div>
   <div class="particles" id="particles"></div>
